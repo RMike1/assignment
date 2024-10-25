@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class HomeController extends Controller
 {
@@ -11,52 +13,37 @@ class HomeController extends Controller
      */
     public function index()
     {
-        //
+        return User::all();
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
-    }
+        $validated=Validator::make($request->all(),[
+        // $validated=$request->validate([
+            'name'=>'required',
+            'email'=>'required',
+            'password'=>'required',
+        ]);
+        if($validated->fails()){
+            $message=$validated->messages();
+            return response()->json([
+                'message'=>$message
+            ]);
+        }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+        User::create($validated);
+        return response()->json([
+           $validated
+        ]);
+    }
+    public function show(User $employee)
     {
-        //
+        return $employee;
     }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
         //
     }
-
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         //
