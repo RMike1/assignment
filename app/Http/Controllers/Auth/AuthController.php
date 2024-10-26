@@ -2,22 +2,33 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Http\Controllers\Controller;
 use App\Models\User;
+use PharIo\Manifest\Email;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use PharIo\Manifest\Email;
+use Laravel\Sanctum\Contracts\HasApiTokens;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
-class AuthController extends Controller
+class AuthController extends Controller implements HasMiddleware
 {
+
+    public static function middleware(){
+        return [
+            new Middleware('auth:sanctum',except:['index','login','update','show']),
+        ];
+    }
+
     public function index()
     {
         return User::all();
     }
-    public function addEmployee(Request $request)
+    public function store(Request $request,User $user)
     {
-        // $validated=Validator::make($request->all(),[
+        Gate::authorize('addEmployee',$user);
         $validated=$request->validate([
             'name'=>'required|max:255',
             'email'=>'required|email|unique:users',
@@ -41,9 +52,8 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $validated=$request->validate([
-            'name'=>'required|max:255',
-            'email'=>'required|email|exists:users',
-            'password'=>'required|confirmed',
+            'email'=>'required|email',
+            'password'=>'required',
         ]);
         
         $user=User::where('email',$validated['email'])->first();
@@ -52,7 +62,7 @@ class AuthController extends Controller
             return "Credentials are not matched!!";
         }
 
-        $token=$user->createToken($validated['name'])->plainTextToken;
+        $token=$user->createToken($validated['email'])->plainTextToken;
 
         return response()->json([
             'user'=>$user,
@@ -63,7 +73,7 @@ class AuthController extends Controller
     public function show(User $user)
     {
         return ['user'=>$user];
-    }
+    }                   
     public function update(Request $request, User $user)
     {
         $validated=$request->validate([
