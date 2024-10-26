@@ -26,29 +26,6 @@ class AuthController extends Controller implements HasMiddleware
     {
         return User::all();
     }
-    public function store(Request $request,User $user)
-    {
-        Gate::authorize('addEmployee',$user);
-        $validated=$request->validate([
-            'name'=>'required|max:255',
-            'email'=>'required|email|unique:users',
-            'password'=>'required|confirmed',
-        ]);
-        // if($validated->fails()){
-        //     return response()->json([
-        //         'errors'=>$validated->messages(),
-        //     ]);
-        // }
-        $user=User::create($validated);
-
-        $token=$user->createToken($request->name)->plainTextToken;
-
-        return response()->json([
-            'user'=>$user,
-            'token'=>$token,
-        ]);
-
-    }
     public function login(Request $request)
     {
         $validated=$request->validate([
@@ -73,23 +50,38 @@ class AuthController extends Controller implements HasMiddleware
     public function show(User $user)
     {
         return ['user'=>$user];
-    }                   
-    public function update(Request $request, User $user)
+    }          
+    
+    public function add_employee(Request $request)
     {
+        Gate::authorize('addEmployee',User::class);
+        $validated=$request->validate([
+            'name'=>'required|max:255',
+            'email'=>'required|email|unique:users',
+            'password'=>'required|confirmed',
+        ]);
+        $user=User::create($validated);
+
+        return response()->json([
+            'user'=>$user,
+        ]);
+
+    }
+    public function update_employee(Request $request, User $user)
+    {
+        Gate::authorize('updateEmployee',$user);
         $validated=$request->validate([
             'name'=>'required|max:255',
             'email'=>'required|email',
-            'password'=>'required|confirmed',
         ]);
 
         $user->updateOrFail($validated);
 
-        $token=$user->createToken($request->name)->plainTextToken;
-
         return response()->json([
             'user'=>$user,
-            'token'=>$token,
         ]);
+
+
     }
 
     public function logout(Request $request){

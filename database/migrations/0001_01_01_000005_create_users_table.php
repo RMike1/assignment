@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use App\Models\Shift;
 
 return new class extends Migration
 {
@@ -17,7 +18,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('password');
             $table->boolean('userType')->default(0);
-            $table->timestamp('time_in')->nullable();
+            $table->foreignIdFor(Shift::class)->default(1)->constrained()->cascadeOnDelete();
             $table->rememberToken();
             $table->timestamps();
         });

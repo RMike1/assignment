@@ -11,7 +11,6 @@ use App\Http\Controllers\Auth\AuthController;
 
 // Route::apiResource('employee',HomeController::class);
 
-Route::post('register',[AuthController::class,'register']);
 
 Route::post('login',[AuthController::class,'login']);
 
@@ -23,6 +22,10 @@ Route::apiResource('employee',AuthController::class);
 
 Route::apiResource('user',AuthController::class);
 
-Route::post('clock-in',[HomeController::class,'clockIn'])->middleware(['auth:sanctum','auth']);
+Route::post('clock-in',[HomeController::class,'clockIn'])->middleware(['auth:sanctum']);
 
-Route::post('clock-out',[HomeController::class,'clockOut'])->middleware(['auth:sanctum','auth']);
+Route::post('clock-out',[HomeController::class,'clockOut'])->middleware(['auth:sanctum']);
+
+Route::post('add-employee',[AuthController::class,'add_employee'])->middleware(['auth:sanctum']);
+
+Route::post('update-employee/{user}',[AuthController::class,'update_employee'])->middleware(['auth:sanctum']);
