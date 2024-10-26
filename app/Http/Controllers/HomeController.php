@@ -18,13 +18,8 @@ class HomeController extends Controller
 
     // public static function middleware()
     // {
-    //     return new Middleware('auth:sanctum');
+    //     return new Middleware('auth:sanctum',except:['clockIn','clockOut']);
     // }
-
-    public function index()
-    {
-        return User::all();
-    }
 
     public function clockIn(Request $request){
         $today=now()->today();
@@ -36,10 +31,20 @@ class HomeController extends Controller
                 'clock_in'=>now(),
                 'date'=>now()->today(),
             ]);
-            return [
-                'message'=>"You've successfully clocked in",
-                'data'=>$employee,
-            ];
+            
+            $user_shift=$request->user()->shift()->first();
+            if($employee->clock_in > $user_shift->time_in){
+                return [
+                    'message'=>"Oops! U've successfully clocked in but You late!",
+                    'data'=>$employee
+                ];
+            }
+            else{
+                return [
+                    'message'=>"Congrats!! U've successfully clocked in on time",
+                    'data'=>$employee
+                ];
+            }
         }
         return ['message'=>'already clocked in!! please wait next day!!'];
     }
@@ -64,24 +69,22 @@ class HomeController extends Controller
         return ['message'=>'already clocked out!! please wait next day!!'];
     }
 
-    public function store(Request $request)
-    {
-        $validated=Validator::make($request->all(),[
-        // $validated=$request->validate([
-            'name'=>'required',
-            'email'=>'required',
-            'password'=>'required',
-        ]);
-        if($validated->fails()){
-            $message=$validated->messages();
-            return response()->json([
-                'message'=>$message
-            ]);
-        }
+    public function attendance(){
+        $attendances=Attendance::all();
 
-        User::create($validated);
-        return response()->json([
-           $validated
-        ]);
+        // foreach($attendances as $attendance){
+        //     $data=[
+        //         "date"=>$attendance->date,
+        //         "clock_in"=>$attendance->clock_in,
+        //         "clock_out"=>$attendance->clock_out,
+        //         "user_id"=>$attendance->user->name
+        //     ];
+        // }
+        return [
+            "data"=>$attendances
+        ];
+
     }
+
+
 }

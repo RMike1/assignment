@@ -5,27 +5,23 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Auth\AuthController;
 
-// Route::get('/user', function (Request $request) {
-//     return $request->user();
-// })->middleware('auth:sanctum');
+Route::get('all-employess',[AuthController::class,'all_employess'])->middleware(['auth:sanctum']);
 
-// Route::apiResource('employee',HomeController::class);
-
-
-Route::post('login',[AuthController::class,'login']);
-
-Route::get('login',[AuthController::class,'login'])->name('login');
+Route::post('login',[AuthController::class,'login'])->name('login');
 
 Route::post('logout',[AuthController::class,'logout'])->middleware('auth:sanctum');
 
-Route::apiResource('employee',AuthController::class);
+Route::post('add-employee',[AuthController::class,'add_employee'])->middleware(['auth:sanctum']);
 
-Route::apiResource('user',AuthController::class);
+Route::put('update-employee/{user}',[AuthController::class,'update_employee'])->middleware(['auth:sanctum']);
+
+Route::delete('delete-employee/{user}',[AuthController::class,'delete_employee'])->middleware(['auth:sanctum']);
 
 Route::post('clock-in',[HomeController::class,'clockIn'])->middleware(['auth:sanctum']);
 
 Route::post('clock-out',[HomeController::class,'clockOut'])->middleware(['auth:sanctum']);
 
-Route::post('add-employee',[AuthController::class,'add_employee'])->middleware(['auth:sanctum']);
+Route::get('attendance',[HomeController::class,'attendance'])->middleware(['auth:sanctum']);
 
-Route::post('update-employee/{user}',[AuthController::class,'update_employee'])->middleware(['auth:sanctum']);
+
+

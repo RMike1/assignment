@@ -13,16 +13,10 @@ use Laravel\Sanctum\Contracts\HasApiTokens;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Routing\Controllers\HasMiddleware;
 
-class AuthController extends Controller implements HasMiddleware
+class AuthController extends Controller
 {
 
-    public static function middleware(){
-        return [
-            new Middleware('auth:sanctum',except:['index','login','update','show']),
-        ];
-    }
-
-    public function index()
+    public function all_employess()
     {
         return User::all();
     }
@@ -71,8 +65,8 @@ class AuthController extends Controller implements HasMiddleware
     {
         Gate::authorize('updateEmployee',$user);
         $validated=$request->validate([
-            'name'=>'required|max:255',
-            'email'=>'required|email',
+            'email'=>'required|email|unique:users',
+            'password'=>'required',
         ]);
 
         $user->updateOrFail($validated);
@@ -80,8 +74,15 @@ class AuthController extends Controller implements HasMiddleware
         return response()->json([
             'user'=>$user,
         ]);
+    }
 
+    public function delete_employee(User $user){
 
+        Gate::authorize('deleteEmployee',$user);
+        $user->delete();
+        return [
+            "message"=>"employee deleted successfully!!",
+        ];
     }
 
     public function logout(Request $request){

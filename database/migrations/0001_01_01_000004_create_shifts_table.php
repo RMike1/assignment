@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name')->nullable();
             $table->time('time_in')->nullable();
             $table->time('time_out')->nullable();
+            $table->string('slug')->nullable();
             $table->timestamps();
         });
     }

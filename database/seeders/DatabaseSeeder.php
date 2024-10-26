@@ -14,15 +14,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(1)->create();
-        $this->call([
-            ShiftSeeder::class,
-        ]);
+        User::factory(4)->create();
+        // $this->call([
+        //     ShiftSeeder::class,
+        // ]);
 
-        User::factory()->create([
-                'name' => 'Admin',
-                'email' => 'admin@gmail.com',
-                'userType' => 1,
-        ]);
+        // User::factory()->create([
+        //         'name' => 'Admin',
+        //         'email' => 'admin@gmail.com',
+        //         'userType' => 1,
+        // ]);
     }
 }
