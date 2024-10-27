@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Password Reset</title>
+    <title>Attendance Confirmation</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -34,31 +34,17 @@
             font-size: 16px;
             line-height: 1.5;
         }
-        .button {
-            display: inline-block;
-            padding: 10px 20px;
-            margin-top: 20px;
-            background-color: #939970eb;
-            color: #ffffff;
-            text-decoration: none;
-            border-radius: 5px;
-            font-size: 16px;
-        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        Password Reset Request
+        Clock Confirmation
     </div>
 
     <div class="content">
-        <p>Hello {{$name}}!!</p>
-        <p>Click the button below to reset password:</p>
-        
-        <a href="{{$url}}" class="button">Reset Password</a>
-
+        <p>{{$data}}</p>
         <p>Thank you</p>
     </div>
 </div>
