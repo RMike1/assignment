@@ -31,6 +31,8 @@ class HomeController extends Controller
                 'clock_in'=>now(),
                 'date'=>now()->today(),
             ]);
+
+            
             
             $user_shift=$request->user()->shift()->first();
             if($employee->clock_in > $user_shift->time_in){
