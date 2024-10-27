@@ -61,9 +61,10 @@ class User extends Authenticatable
     public function sendPasswordResetNotification($token)
     {
 
+        $name=$this->name;
         $url = 'https://127.0.0.1:8000/reset-password?token=' . $token;
 
-        $this->notify(new ResetPasswordNotification($url));
+        $this->notify(new ResetPasswordNotification($url, $name));
     }
     
 }
