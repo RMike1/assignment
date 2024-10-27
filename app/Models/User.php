@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Notifications\ResetPasswordNotification;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\Attendance;
 use App\Models\Shift;
@@ -55,6 +56,14 @@ class User extends Authenticatable
 
     public function shift(){
         return $this->belongsTo(Shift::class);
+    }
+
+    public function sendPasswordResetNotification($token)
+    {
+
+        $url = 'https://127.0.0.1:8000/reset-password?token=' . $token;
+
+        $this->notify(new ResetPasswordNotification($url));
     }
     
 }

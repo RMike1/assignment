@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Auth\AuthController;
 
@@ -29,8 +30,8 @@ Route::middleware(['auth:sanctum'])->group(function(){
 
 });
 
-
-
+Route::post('forgot-password', [NewPasswordController::class, 'forgotPassword']);
+Route::post('reset-password', [NewPasswordController::class, 'reset']);
 
 
 
