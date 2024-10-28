@@ -11,7 +11,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Mail\Mailables\Address;
 
 
-class AdminAttendanceNotification extends Mailable
+class AdminAttendanceNotification extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 

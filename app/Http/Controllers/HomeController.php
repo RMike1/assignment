@@ -43,8 +43,8 @@ class HomeController extends Controller
                 $username= $request->user()->name;
                 $adminmessage= $request->user()->name. "updated has clocked in at ". $employee->clock_in->format('h:i A');
                 $admin=User::where('userType',1)->first();
-                Mail::to($request->user())->send(new AttendanceClockInNotification($message,$username));
-                Mail::to($admin)->send(new AdminAttendanceNotification($adminmessage));
+                Mail::to($request->user())->queue(new AttendanceClockInNotification($message,$username));
+                Mail::to($admin)->queue(new AdminAttendanceNotification($adminmessage));
                 return [
                     'message'=>$message,
                     'data'=>$employee
@@ -55,8 +55,8 @@ class HomeController extends Controller
                 $adminmessage=$request->user()->name. " has clocked in at ". $employee->clock_in->format('h:i A');
                 $username= $request->user()->name;
                 $admin=User::where('userType',1)->first();
-                Mail::to($request->user())->send(new AttendanceClockInNotification($message,$username));
-                Mail::to($admin)->send(new AdminAttendanceNotification($adminmessage));
+                Mail::to($request->user())->queue(new AttendanceClockInNotification($message,$username));
+                Mail::to($admin)->queue(new AdminAttendanceNotification($adminmessage));
                 return [
                     'message'=>$message,
                     'data'=>$employee
