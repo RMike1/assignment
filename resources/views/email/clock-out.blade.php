@@ -40,12 +40,12 @@
 
 <div class="container">
     <div class="header">
-        Clock-Out Confirmation
+        Attendance Notification Clock-In
     </div>
 
     <div class="content">
-        <p>Hello {{$name}}!!</p>
-        <p>{{$data}}</p>
+        <p>Hello {{$username}}!!</p>
+        <p>{{$usermessage}}</p>
         <p>Thank you</p>
     </div>
 </div>

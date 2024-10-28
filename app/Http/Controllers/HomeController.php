@@ -2,20 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\Attendance;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
-use Illuminate\Routing\Controllers\HasMiddleware;
-use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Support\Facades\Validator;
-use Carbon\Traits\Date;
-use Illuminate\Support\Facades\Notification;
-use App\Notifications\ClockInNotification;
-use App\Notifications\ClockOutNotification;
-use App\Notifications\AdminAttendanceNotification;
 use DateTime;
+use Carbon\Carbon;
+use App\Models\User;
 use DateTimeInterface;
+use Carbon\Traits\Date;
+use App\Models\Attendance;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
+use App\Notifications\ClockOutNotification;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use App\Mail\AttendanceClockInNotification;
+use App\Mail\AttendanceClockOutNotification;
+use App\Mail\AdminAttendanceNotification;
 
 class HomeController extends Controller
 {
@@ -35,26 +36,27 @@ class HomeController extends Controller
                 'clock_in'=>now(),
                 'date'=>now()->today(),
             ]);
-
             
             $user_shift=$request->user()->shift()->first();
             if($employee->clock_in > $user_shift->time_in){
                 $message="U've successfully clocked in but You late!";
-                $adminmessage= $request->user()->name. " has clocked in at ". $employee->clock_in->format('h:i A');
+                $username= $request->user()->name;
+                $adminmessage= $request->user()->name. "updated has clocked in at ". $employee->clock_in->format('h:i A');
                 $admin=User::where('userType',1)->first();
-                Notification::send($request->user(), new ClockInNotification($message));
-                Notification::send($admin, new AdminAttendanceNotification($adminmessage));
+                Mail::to($request->user())->send(new AttendanceClockInNotification($message,$username));
+                Mail::to($admin)->send(new AdminAttendanceNotification($adminmessage));
                 return [
                     'message'=>$message,
                     'data'=>$employee
                 ];
             }
             else{
-                $message="U've successfully clocked in but You late!";
-                $adminmessage= $request->user()->name. " has clocked in at ". $employee->clock_in->format('h:i A');
+                $message="U've successfully clocked in on time!";
+                $adminmessage=$request->user()->name. " has clocked in at ". $employee->clock_in->format('h:i A');
+                $username= $request->user()->name;
                 $admin=User::where('userType',1)->first();
-                Notification::send($request->user(), new ClockInNotification($message));
-                Notification::send($admin, new AdminAttendanceNotification($adminmessage));
+                Mail::to($request->user())->send(new AttendanceClockInNotification($message,$username));
+                Mail::to($admin)->send(new AdminAttendanceNotification($adminmessage));
                 return [
                     'message'=>$message,
                     'data'=>$employee
@@ -82,8 +84,9 @@ class HomeController extends Controller
                 $message="You've successfully clocked out!!";
                 $adminmessage= $request->user()->name. " has clocked out at ". $employee->clock_out->format('h:i A');
                 $admin=User::where('userType',1)->first();
-                Notification::send($request->user(), new ClockOutNotification($message));
-                Notification::send($admin, new AdminAttendanceNotification($adminmessage));
+                $username= $request->user()->name;
+                Mail::to($request->user())->send(new AttendanceClockOutNotification($message,$username));
+                Mail::to($admin)->send(new AdminAttendanceNotification($adminmessage));
                 return [
                     'message'=>$message,
                 ];
