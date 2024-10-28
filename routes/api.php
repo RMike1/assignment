@@ -27,8 +27,12 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::post('clock-out',[HomeController::class,'clockOut']);
     
     Route::get('attendance',[HomeController::class,'attendance']);
+    
+    Route::post('attendance-report', [HomeController::class, 'generateReport']);
 
     Route::post('/forgot-password', [NewPasswordController::class, 'forgotPassword'])->name('password.email');
+
+
 });
 
 Route::post('reset-password', [NewPasswordController::class, 'reset']);

@@ -17,6 +17,7 @@ use Illuminate\Routing\Controllers\HasMiddleware;
 use App\Mail\AttendanceClockInNotification;
 use App\Mail\AttendanceClockOutNotification;
 use App\Mail\AdminAttendanceNotification;
+use Pdf;
 
 class HomeController extends Controller
 {
@@ -96,20 +97,21 @@ class HomeController extends Controller
 
     public function attendance(){
         $attendances=Attendance::all();
-
-        // foreach($attendances as $attendance){
-        //     $data=[
-        //         "date"=>$attendance->date,
-        //         "clock_in"=>$attendance->clock_in,
-        //         "clock_out"=>$attendance->clock_out,
-        //         "user_id"=>$attendance->user->name
-        //     ];
-        // }
         return [
             "data"=>$attendances
         ];
 
     }
 
+    public function generateReport(Request $request){
+
+        $todayDate=Carbon::now()->today();
+        $attendances = Attendance::whereDate('date',$todayDate )->get();
+        $date = $request->query($todayDate, now()->toDateString()); 
+
+        $pdf = Pdf::loadView('pdf.attendance_report', ['attendances' => $attendances, 'date' => $date]);
+
+        return $pdf->download("attendance_report_{$date}.pdf");
+    }
 
 }
