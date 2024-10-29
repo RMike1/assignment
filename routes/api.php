@@ -28,7 +28,7 @@ Route::middleware(['auth:sanctum'])->group(function(){
     
     Route::get('attendance',[HomeController::class,'attendance']);
     
-    Route::post('attendance-report', [HomeController::class, 'generateReport']);
+    // Route::post('attendance-report', [HomeController::class, 'generateReport']);
 
     Route::post('/forgot-password', [NewPasswordController::class, 'forgotPassword'])->name('password.email');
 

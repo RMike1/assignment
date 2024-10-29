@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use PDF;
 use DateTime;
 use Carbon\Carbon;
 use App\Models\User;
@@ -9,15 +10,16 @@ use DateTimeInterface;
 use Carbon\Traits\Date;
 use App\Models\Attendance;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Mail;
+use Barryvdh\Snappy\Facades\SnappyPdf;
+use App\Mail\AdminAttendanceNotification;
 use Illuminate\Support\Facades\Validator;
+use App\Mail\AttendanceClockInNotification;
 use App\Notifications\ClockOutNotification;
+use App\Mail\AttendanceClockOutNotification;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Routing\Controllers\HasMiddleware;
-use App\Mail\AttendanceClockInNotification;
-use App\Mail\AttendanceClockOutNotification;
-use App\Mail\AdminAttendanceNotification;
-use Pdf;
 
 class HomeController extends Controller
 {
@@ -105,13 +107,14 @@ class HomeController extends Controller
 
     public function generateReport(Request $request){
 
-        $todayDate=Carbon::now()->today();
-        $attendances = Attendance::whereDate('date',$todayDate )->get();
-        $date = $request->query($todayDate, now()->toDateString()); 
+        // $todayDate=Carbon::now()->today();
+        // $attendances = Attendance::whereDate('date',$todayDate )->get();
+        // $date = $request->query($todayDate, now()->toDateString()); 
 
-        $pdf = Pdf::loadView('pdf.attendance_report', ['attendances' => $attendances, 'date' => $date]);
-
-        return $pdf->download("attendance_report_{$date}.pdf");
+        $pdf = PDF::loadView('report.attendance_report');
+        // $pdf = App::make('snappy.pdf');
+        // $pdf->loadHtml('<h1>Test</h1>');
+        return $pdf->inline();
     }
 
 }
