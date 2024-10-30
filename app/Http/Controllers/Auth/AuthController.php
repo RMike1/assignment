@@ -95,9 +95,9 @@ class AuthController extends Controller
 
         Gate::authorize('deleteEmployee',$user);
         $user->delete();
-        return [
+        return response()->json([
             "message"=>"employee deleted successfully!!",
-        ];
+        ]);
     }
 
     public function logout(Request $request){

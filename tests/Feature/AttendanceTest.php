@@ -100,3 +100,36 @@ it('restrict non admin to update employee', function () {
     $response->assertStatus(403); 
 });
 
+
+it('allows admin to delete an employee', function () {
+
+    $userC = User::factory()->create([
+        'name' => 'user5',
+        'email' => 'user5@gmail.com',
+        'password' =>1234,
+        'shift_id' => $this->morningShift->id,
+    ]);
+
+    $this->actingAs($this->admin, 'sanctum');
+    $response = $this->deleteJson("/api/delete-employee/{$userC->id}");
+
+    $response->assertStatus(200); 
+    $this->assertDatabaseMissing('users', ['name' => $userC->name]);
+});
+it('restrict normal user to delete an employee', function () {
+
+    $userC = User::factory()->create([
+        'name' => 'user5',
+        'email' => 'user5@gmail.com',
+        'password' =>1234,
+        'shift_id' => $this->morningShift->id,
+    ]);
+
+    $this->actingAs($this->user, 'sanctum');
+    $response = $this->deleteJson("/api/delete-employee/{$userC->id}");
+
+    $response->assertStatus(403); 
+    // $this->assertDatabaseMissing('users', ['name' => $userC->name]);
+});
+
+
