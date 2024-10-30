@@ -93,11 +93,15 @@ class AuthController extends Controller
 
     public function delete_employee(User $user){
 
-        Gate::authorize('deleteEmployee',$user);
-        $user->delete();
+        if (Gate::allows('deleteEmployee',$user)) {
+            $user->delete();
+            return response()->json([
+                "message"=>"employee deleted successfully!!",
+            ]);
+        }
         return response()->json([
-            "message"=>"employee deleted successfully!!",
-        ]);
+            'message' => "U have not access to employee list"
+        ], Response::HTTP_FORBIDDEN);
     }
 
     public function logout(Request $request){
