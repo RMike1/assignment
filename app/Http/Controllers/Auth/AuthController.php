@@ -22,24 +22,28 @@ class AuthController extends Controller
     }
     public function login(Request $request)
     {
-        $validated=$request->validate([
-            'email'=>'required|email',
-            'password'=>'required',
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
         ]);
         
-        $user=User::where('email',$validated['email'])->first();
-
-        if(!$user || !Hash::check($validated['password'],$user->password)){
-            return "Credentials are not matched!!";
+        $user = User::where('email', $validated['email'])->first();
+    
+        if (!$user || !Hash::check($validated['password'], $user->password)) {
+            return response()->json([
+                'message' => 'Unauthorized'
+            ], 401);
         }
-
-        $token=$user->createToken($validated['email'])->plainTextToken;
-
+    
+        $token = $user->createToken($validated['email'])->plainTextToken;
+    
         return response()->json([
-            'user'=>$user,
-            'token'=>$token,
+            'user' => $user,
+            'token' => $token,
         ]);
     }
+    
+    
 
     public function show(User $user)
     {

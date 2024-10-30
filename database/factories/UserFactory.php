@@ -27,10 +27,19 @@ class UserFactory extends Factory
             'name' => fake()->name(),
             'userType' => fake()->boolean(),
             'email' => fake()->unique()->safeEmail(),
-            'shift_id' =>random_int(1,3),
+            'shift_id' =>1,
             'password' => static::$password ??= Hash::make('1234'),
             'remember_token' => Str::random(10),
         ];
+    }
+
+    public function admin()
+    {
+        return $this->state([
+            'userType' => 1,
+            'name' => 'Admin',
+            'email' => 'admin@gmail.com',
+        ]);
     }
 
     /**
