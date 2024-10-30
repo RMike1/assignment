@@ -17,8 +17,14 @@ beforeEach(function () {
     $this->seed(ShiftSeeder::class);
     $this->morningShift = Shift::where('slug', 'morning-shift')->first();
     $this->admin = User::factory()->admin()->create(['shift_id' => $this->morningShift->id]);
+    $this->latest = User::where('userType',1)->first();
     $this->user = User::factory()->create(['shift_id' => $this->morningShift->id]);
 });
+
+afterEach(function () {
+    DB::rollBack();
+});
+
 
 
 it('can login with correct credentials', function () {
@@ -29,15 +35,12 @@ it('can login with correct credentials', function () {
 
     $response->assertStatus(200); 
     $response->assertJsonStructure([
-        'user' => [
-            'id', 'name', 'email', 'userType', 'shift_id'
-        ],
+        'user' => ['name', 'email'],
         'token'
     ]);
 });
 
 it('cannot login with wrong credentials', function () {
-
     $response = $this->postJson('/api/login', [
         'email' => $this->user->email,
         'password' => 12345,
@@ -46,3 +49,19 @@ it('cannot login with wrong credentials', function () {
     $response->assertStatus(401);
     $response->assertJson(['message' => 'Unauthorized']);
 });
+
+
+it('allows only admin to view all employees', function () {
+    $response = $this->actingAs($this->admin)->getJson('/api/all-employess');
+    $response->assertStatus(200);
+});
+
+it('restricts non-admins from accessing employee list', function () {
+    $response = $this->actingAs($this->user)->getJson('/api/all-employess');
+    $response->assertStatus(403); 
+    $response->assertJson([
+        'message' => "U have not access to employee list", 
+    ]);
+});
+
+

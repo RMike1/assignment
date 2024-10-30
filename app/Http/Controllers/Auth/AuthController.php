@@ -11,15 +11,23 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Sanctum\Contracts\HasApiTokens;
 use Illuminate\Routing\Controllers\Middleware;
+use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Auth\Access\AuthorizationException;
 
 class AuthController extends Controller
 {
 
-    public function all_employess()
-    {
+    public function all_employess(Request $request)
+{
+    if (Gate::allows('accessEmployee', User::class)) {
         return User::all();
     }
+    return response()->json([
+        'message' => "U have not access to employee list"
+    ], Response::HTTP_FORBIDDEN);
+}
+
     public function login(Request $request)
     {
         $validated = $request->validate([
@@ -49,6 +57,9 @@ class AuthController extends Controller
     {
         return ['user'=>$user];
     }          
+
+
+
     
     public function add_employee(Request $request)
     {
@@ -65,6 +76,7 @@ class AuthController extends Controller
         ]);
 
     }
+
     public function update_employee(Request $request, User $user)
     {
         Gate::authorize('updateEmployee',$user);
