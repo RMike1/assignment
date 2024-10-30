@@ -26,7 +26,6 @@ afterEach(function () {
 });
 
 
-
 it('can login with correct credentials', function () {
     $response = $this->postJson('/api/login', [
         'email' => $this->user->email,
@@ -63,5 +62,3 @@ it('restricts non-admins from accessing employee list', function () {
         'message' => "U have not access to employee list", 
     ]);
 });
-
-
