@@ -18,7 +18,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ShiftSeeder::class,
         ]);
-        User::factory(2)->create();
+        User::factory()->create();
         // Shift::factory(1)->create();
 
         // User::factory()->create([

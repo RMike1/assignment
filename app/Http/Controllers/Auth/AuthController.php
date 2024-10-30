@@ -74,7 +74,6 @@ class AuthController extends Controller
         return response()->json([
             'user'=>$user,
         ]);
-
     }
 
     public function update_employee(Request $request, User $user)
