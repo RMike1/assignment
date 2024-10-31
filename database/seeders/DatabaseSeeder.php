@@ -18,13 +18,13 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ShiftSeeder::class,
         ]);
-        User::factory()->create();
+        // User::factory()->create();
         // Shift::factory(1)->create();
 
-        // User::factory()->create([
-        //         'name' => 'Admin',
-        //         'email' => 'admin@gmail.com',
-        //         'userType' => 1,
-        // ]);
+        User::factory()->create([
+                'name' => 'Admin',
+                'email' => 'admin@gmail.com',
+                'userType' => 1,
+        ]);
     }
 }

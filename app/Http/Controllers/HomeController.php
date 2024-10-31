@@ -118,13 +118,13 @@ class HomeController extends Controller
 
     public function generateReport(Request $request)
     {
-
-        // $todayDate=Carbon::now()->today();
-        // $attendances = Attendance::whereDate('date',$todayDate )->get();
+        
+        $todayDate=Carbon::today();
+        $attendances = Attendance::whereDate('date',$todayDate )->get();
         // $date = $request->query($todayDate, now()->toDateString()); 
+        // dd($attendances);
 
-        // $pdf = App::make('snappy.pdf');
-        // $pdf->loadHtml('<h1>Test</h1>');
-        // return $pdf->inline();
+        $pdf = PDF::loadView('report.attendance_report',compact('attendances','todayDate'));
+        return $pdf->inline();
     }
 }

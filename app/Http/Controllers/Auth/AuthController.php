@@ -50,17 +50,11 @@ class AuthController extends Controller
             'token' => $token,
         ]);
     }
-    
-    
 
     public function show(User $user)
     {
         return ['user'=>$user];
     }          
-
-
-
-    
     public function add_employee(Request $request)
     {
         Gate::authorize('addEmployee',User::class);
@@ -78,18 +72,27 @@ class AuthController extends Controller
 
     public function update_employee(Request $request, User $user)
     {
-        Gate::authorize('updateEmployee',$user);
-        $validated=$request->validate([
-            'email'=>'required|email|unique:users',
-            'password'=>'required',
-        ]);
-
-        $user->updateOrFail($validated);
-
+        if (Gate::allows('updateEmployee',$user)) {   
+            if($user){
+                $validated=$request->validate([
+                    'email'=>'required|email|unique:users',
+                    'password'=>'required',
+                ]);
+                $user->updateOrFail($validated);
+    
+                return response()->json([
+                    'user'=>$user,
+                ]);
+            }
+            return response()->json([
+                'message' => "employee not found!!"
+            ]);
+        }
         return response()->json([
-            'user'=>$user,
-        ]);
+            'message' => "U're not allowed to update an employee"
+        ], Response::HTTP_FORBIDDEN);
     }
+
 
     public function delete_employee(User $user){
 

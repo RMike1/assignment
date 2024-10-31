@@ -28,12 +28,12 @@ Route::middleware(['auth:sanctum'])->group(function(){
     
     Route::get('attendance',[HomeController::class,'attendance'])->name('attendance');
     
-    // Route::post('attendance-report', [HomeController::class, 'generateReport']);
-
+    
     Route::post('/forgot-password', [NewPasswordController::class, 'forgotPassword'])->name('forgot.password')->middleware('auth:sanctum');
-
-
+    
+    
 });
+Route::get('attendance-report', [HomeController::class, 'generateReport']);
 
 Route::post('reset-password', [NewPasswordController::class, 'reset'])->name('reset.password');
 
