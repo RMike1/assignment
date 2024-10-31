@@ -11,6 +11,7 @@ use Carbon\Traits\Date;
 use App\Models\Attendance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
 use Barryvdh\Snappy\Facades\SnappyPdf;
 use App\Mail\AdminAttendanceNotification;
@@ -19,6 +20,7 @@ use App\Mail\AttendanceClockInNotification;
 use App\Notifications\ClockOutNotification;
 use App\Mail\AttendanceClockOutNotification;
 use Illuminate\Routing\Controllers\Middleware;
+use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Routing\Controllers\HasMiddleware;
 
 class HomeController extends Controller
@@ -98,10 +100,20 @@ class HomeController extends Controller
 
     public function attendance()
     {
+
+        if (Gate::allows('accessAttendance', User::class)) {
         $attendances = Attendance::all();
-        return [
+        return response()->json([
             "data" => $attendances
-        ];
+        ]);
+        }
+        return response()->json([
+            'message' => "U have not access to check attendance list"
+        ], Response::HTTP_FORBIDDEN);
+
+
+
+        
     }
 
     public function generateReport(Request $request)
