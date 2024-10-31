@@ -9,6 +9,7 @@ use Database\Seeders\ShiftSeeder;
 use Illuminate\Support\Facades\DB;
 use function Pest\Laravel\actingAs;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password;
 use App\Mail\AdminAttendanceNotification;
 use App\Mail\AttendanceClockInNotification;
 use App\Mail\AttendanceClockOutNotification;
@@ -281,3 +282,5 @@ it('sends late clock-in notification if clock-in is after shift start', function
     Mail::assertQueued(AttendanceClockInNotification::class);
     Mail::assertQueued(AdminAttendanceNotification::class);
 });
+
+
