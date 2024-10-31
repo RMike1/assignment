@@ -1,34 +1,11 @@
 <?php
 
-use Carbon\Carbon;
 use App\Models\User;
-use App\Models\Shift;
-use Illuminate\Support\Str;
-use Laravel\Sanctum\Sanctum;
-use Database\Seeders\ShiftSeeder;
-use Illuminate\Support\Facades\DB;
-use function Pest\Laravel\actingAs;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Password;
 use App\Mail\AdminAttendanceNotification;
 use App\Mail\AttendanceClockInNotification;
 use App\Mail\AttendanceClockOutNotification;
-// use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 
-// uses(LazilyRefreshDatabase::class);
-
-
-beforeEach(function () {
-    DB::beginTransaction();
-    $this->seed(ShiftSeeder::class);
-    $this->morningShift = Shift::where('slug', 'morning-shift')->first();
-    $this->admin = User::factory()->admin()->create(['shift_id' => $this->morningShift->id]);
-    $this->user = User::factory()->create(['shift_id' => $this->morningShift->id]);
-});
-
-afterEach(function () {
-    DB::rollBack();
-});
 
 it('allows admin to add an employee', function () {
     $this->actingAs($this->admin, 'sanctum');
@@ -282,5 +259,3 @@ it('sends late clock-in notification if clock-in is after shift start', function
     Mail::assertQueued(AttendanceClockInNotification::class);
     Mail::assertQueued(AdminAttendanceNotification::class);
 });
-
-

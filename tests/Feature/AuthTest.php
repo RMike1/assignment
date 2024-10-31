@@ -1,40 +1,15 @@
 <?php
 
-use App\Models\User;
-use App\Models\Shift;
-use Illuminate\Support\Str;
-use Laravel\Sanctum\Sanctum;
-use Database\Seeders\ShiftSeeder;
-use Illuminate\Support\Facades\DB;
-use function Pest\Laravel\actingAs;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
-// use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
-
-// uses(LazilyRefreshDatabase::class);
-
-
-beforeEach(function () {
-    DB::beginTransaction();
-    $this->seed(ShiftSeeder::class);
-    $this->morningShift = Shift::where('slug', 'morning-shift')->first();
-    $this->admin = User::factory()->admin()->create(['shift_id' => $this->morningShift->id]);
-    $this->latest = User::where('userType',1)->first();
-    $this->user = User::factory()->create(['shift_id' => $this->morningShift->id]);
-});
-
-afterEach(function () {
-    DB::rollBack();
-});
-
 
 it('can login with correct credentials', function () {
     $response = $this->postJson('/api/login', [
         'email' => $this->user->email,
-        'password' => 1234, 
+        'password' => 1234,
     ]);
 
-    $response->assertStatus(200); 
+    $response->assertStatus(200);
     $response->assertJsonStructure([
         'user' => ['name', 'email'],
         'token'
@@ -59,9 +34,9 @@ it('allows only admin to view all employees', function () {
 
 it('restricts non-admins from accessing employee list', function () {
     $response = $this->actingAs($this->user)->getJson('/api/all-employess');
-    $response->assertStatus(403); 
+    $response->assertStatus(403);
     $response->assertJson([
-        'message' => "U have not access to employee list", 
+        'message' => "U have not access to employee list",
     ]);
 });
 
@@ -76,7 +51,6 @@ it('sends a reset link to the user with a valid email', function () {
 
 
 it('fails to send reset link if email is not provided', function () {
-    // Authenticate the user
     $this->actingAs($this->user, 'sanctum');
     $response = $this->postJson(route('forgot.password'), [
         'email' => '',
@@ -160,5 +134,3 @@ it('fails to reset the password if the passwords do not match', function () {
     $response->assertStatus(422);
     $response->assertJsonValidationErrors(['password']);
 });
-
-
