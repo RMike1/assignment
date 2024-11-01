@@ -42,7 +42,6 @@ class AuthController extends Controller
                 'message' => 'Unauthorized'
             ], 401);
         }
-
         $token = $user->createToken($validated['email'])->plainTextToken;
 
         return response()->json([

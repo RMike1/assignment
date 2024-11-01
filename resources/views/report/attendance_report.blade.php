@@ -70,7 +70,9 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="4">No data</td>
+                    <td style="text-align: center" colspan="6">
+                        <h3>No attendance has been submitted for today.</h3>
+                    </td>
                 </tr>
             @endforelse
         </tbody>
