@@ -130,6 +130,10 @@ it('restrict non admin to view attendance data', function () {
     $response->assertJson(["message" => "U have not access to check attendance list"]);
 });
 
+it(' admin can generate pdf report', function () {
+    $response = $this->actingAs($this->admin, 'sanctum')->postJson(route('generate.reportPdf'));
+    $response->assertStatus(200);
+});
 
 it('allows authenticated user to clock in', function () {
     $this->actingAs($this->user, 'sanctum');

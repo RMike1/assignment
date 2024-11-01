@@ -22,6 +22,9 @@ use App\Mail\AttendanceClockOutNotification;
 use Illuminate\Routing\Controllers\Middleware;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Routing\Controllers\HasMiddleware;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Illuminate\Support\Facades\Storage;
 
 class HomeController extends Controller
 {
@@ -101,10 +104,10 @@ class HomeController extends Controller
     public function attendance()
     {
         if (Gate::allows('accessAttendance', User::class)) {
-        $attendances = Attendance::all();
-        return response()->json([
-            "data" => $attendances
-        ]);
+            $attendances = Attendance::all();
+            return response()->json([
+                "data" => $attendances
+            ]);
         }
         return response()->json([
             'message' => "U have not access to check attendance list"
@@ -112,16 +115,45 @@ class HomeController extends Controller
     }
 
     public function generateReport(Request $request)
-    
+
     {
         if (Gate::allows('generateReportPdf', User::class)) {
-            $todayDate=Carbon::today();
-            $attendances = Attendance::whereDate('date',$todayDate )->get();
-            $pdf = PDF::loadView('report.attendance_report',compact('attendances','todayDate'));
+            $todayDate = Carbon::today();
+            $attendances = Attendance::whereDate('date', $todayDate)->get();
+            $pdf = PDF::loadView('report.attendance_report', compact('attendances', 'todayDate'));
             return $pdf->inline();
         }
         return response()->json([
             'message' => "U're not allowed to generate attendance report"
         ], Response::HTTP_FORBIDDEN);
+    }
+
+    public function generateReportExcel()
+    {
+        $todayDate = Carbon::today();
+        $attendances = Attendance::whereDate('date', $todayDate)->get();
+        $spreadsheet = new Spreadsheet();
+        $activeWorksheet = $spreadsheet->getActiveSheet();
+        $activeWorksheet->setCellValue('A1', 'Employee Name'); 
+        $activeWorksheet->setCellValue('B1', 'Clock In Time');
+        $activeWorksheet->setCellValue('C1', 'Clock Out Time');
+        $activeWorksheet->setCellValue('D1', 'Rep')->getDefaultColumnDimension()->setWidth(25);
+        $row = 2;
+        foreach ($attendances as $attendance) {
+            $activeWorksheet->setCellValue("A$row", $attendance->user->name);
+            $activeWorksheet->setCellValue("B$row", Carbon::parse($attendance->clock_in)->format('h:i A') );
+            $activeWorksheet->setCellValue("C$row", Carbon::parse($attendance->clock_out)->format('h:i A') );
+            $activeWorksheet->setCellValue("D$row", $attendance->user->shift->time_in < $attendance->clock_in ? 'Late' : 'On time' );
+            $row++;
+        }
+        $fileName = "attendance_report_" . $todayDate->format('Y_m_d') . ".xlsx";
+        $writer = new Xlsx($spreadsheet);
+        $writer->save('hello world.xlsx');
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $fileName . '"');
+        header('Cache-Control: max-age=0');
+        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $writer->save('php://output');
     }
 }

@@ -137,16 +137,3 @@ it('fails to reset the password if the passwords do not match', function () {
     $response->assertStatus(422);
     $response->assertJsonValidationErrors(['password']);
 });
-
-it('only admin allowed to generate pdf report', function () {
-    $response = $this->actingAs($this->admin, 'sanctum')->postJson(route('generate.reportPdf'));
-    // SnappyPdf::shouldReceive('loadView')
-    //     ->once()
-    //     ->with('report.attendance_report', [
-    //         // 'attendances' => \Mockery::type('Illuminate\Database\Eloquent\Collection'),
-    //         'attendances' => Attendance::whereDate('date', $this->userDate)->get(),
-    //     ])
-    //     ->andReturnSelf()
-    //     ->andReturn('mocked-pdf-content');
-    $response->assertStatus(200);
-});

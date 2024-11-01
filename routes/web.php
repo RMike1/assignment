@@ -8,3 +8,5 @@ use App\Http\Controllers\HomeController;
 // });
 
     Route::get('/attendance-report', [HomeController::class, 'generateReport']);
+
+    Route::get('attendance-reportExcel', [HomeController::class, 'generateReportExcel'])->name('generate.reportExcel');

@@ -21,7 +21,8 @@ class AttendanceFactory extends Factory
             'date'=>now(),
             'clock_in'=>fake()->time(),
             'clock_out'=>fake()->time(),
-            'user_id'=>1,
+            'user_id' => User::inRandomOrder()->first()->id ?? User::factory()->create()->id,
+            // 'user_id' => rand(1, 5),
         ];
     }
 }
