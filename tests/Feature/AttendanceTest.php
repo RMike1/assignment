@@ -266,4 +266,19 @@ it('sends late clock-in notification if clock-in is after shift start', function
 });
 
 
+it('can generate an attendance Excel report', function () {
+    $this->actingAs($this->admin);
+    $attendance = Attendance::factory()->create([
+        'user_id' => $this->admin->id,
+        'date' => now(),
+        'clock_in' => now()->subHours(1),
+        'clock_out' => now(),
+    ]);
+    $response = $this->getJson(route('generate.reportExcel'));
+    $response->assertStatus(200);
+    $response->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    $response->assertHeader('Content-Disposition', 'attachment; filename="attendance_report_' . now()->format('Y_m_d') . '.xlsx"');
+    $this->assertStringStartsWith('<?xml version="1.0"', (string) $response->getContent());
+});
+
 
