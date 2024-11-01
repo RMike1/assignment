@@ -117,7 +117,7 @@ class HomeController extends Controller
     public function generateReport(Request $request)
 
     {
-        if (Gate::allows('generateReportPdf', User::class)) {
+        if (Gate::allows('generateReport', User::class)) {
             $todayDate = Carbon::today();
             $attendances = Attendance::whereDate('date', $todayDate)->get();
             $pdf = PDF::loadView('report.attendance_report', compact('attendances', 'todayDate'));
@@ -128,32 +128,58 @@ class HomeController extends Controller
         ], Response::HTTP_FORBIDDEN);
     }
 
+    //=================CSV====================
+
+    // public function generateReportExcel()
+    // {
+    //     $todayDate = Carbon::today();
+    //     $attendances = Attendance::whereDate('date', $todayDate)->get();
+    //     $csvData = "Employee Name,Clock In Time,Clock Out Time,Rep\n";
+
+    //     foreach ($attendances as $attendance) {
+    //         $employeeName = $attendance->user->name;
+    //         $clockInTime = Carbon::parse($attendance->clock_in)->format('h:i A');
+    //         $clockOutTime = Carbon::parse($attendance->clock_out)->format('h:i A');
+    //         $status = $attendance->user->shift->time_in < $attendance->clock_in ? 'Late' : 'On time';
+    //         $csvData .= "$employeeName,$clockInTime,$clockOutTime,$status\n";
+    //     }
+    //     $fileName = "attendance_report_" . $todayDate->format('Y_m_d') . ".csv";
+    //     return response($csvData, 200, [
+    //         'Content-Type' => 'text/csv',
+    //         'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+    //     ]);
+    // }
+
+    //=================XLSX====================
     public function generateReportExcel()
     {
+        if (Gate::allows('generateReport', User::class)) {
         $todayDate = Carbon::today();
         $attendances = Attendance::whereDate('date', $todayDate)->get();
         $spreadsheet = new Spreadsheet();
         $activeWorksheet = $spreadsheet->getActiveSheet();
-        $activeWorksheet->setCellValue('A1', 'Employee Name'); 
+        $activeWorksheet->setCellValue('A1', 'Employee Name');
         $activeWorksheet->setCellValue('B1', 'Clock In Time');
         $activeWorksheet->setCellValue('C1', 'Clock Out Time');
-        $activeWorksheet->setCellValue('D1', 'Rep')->getDefaultColumnDimension()->setWidth(25);
+        $activeWorksheet->setCellValue('D1', 'Status')->getDefaultColumnDimension()->setWidth(30);
         $row = 2;
         foreach ($attendances as $attendance) {
             $activeWorksheet->setCellValue("A$row", $attendance->user->name);
-            $activeWorksheet->setCellValue("B$row", Carbon::parse($attendance->clock_in)->format('h:i A') );
-            $activeWorksheet->setCellValue("C$row", Carbon::parse($attendance->clock_out)->format('h:i A') );
-            $activeWorksheet->setCellValue("D$row", $attendance->user->shift->time_in < $attendance->clock_in ? 'Late' : 'On time' );
+            $activeWorksheet->setCellValue("B$row", Carbon::parse($attendance->clock_in)->format('h:i A'));
+            $activeWorksheet->setCellValue("C$row", Carbon::parse($attendance->clock_out)->format('h:i A'));
+            $activeWorksheet->setCellValue("D$row", $attendance->user->shift->time_in < $attendance->clock_in ? 'Late' : 'On time');
             $row++;
         }
         $fileName = "attendance_report_" . $todayDate->format('Y_m_d') . ".xlsx";
-        $writer = new Xlsx($spreadsheet);
-        $writer->save('hello world.xlsx');
-
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment; filename="' . $fileName . '"');
         header('Cache-Control: max-age=0');
-        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $writer = new Xlsx($spreadsheet);
         $writer->save('php://output');
+        exit();
+        }
+        return response()->json([
+            'message' => "U're not allowed to generate attendance report"
+        ], Response::HTTP_FORBIDDEN);
     }
 }

@@ -27,7 +27,7 @@ class UserPolicy
     {
         return $user->userType===1 ? Response::allow() : Response::deny("U're not allowed to delete employee");
     }
-    public function generateReportPdf(User $user): Response
+    public function generateReport(User $user): Response
     {
         return $user->userType===1 ? Response::allow() : Response::deny("U're not allowed to generate attendance report");
     }

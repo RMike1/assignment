@@ -31,6 +31,8 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::post('/forgot-password', [NewPasswordController::class, 'forgotPassword'])->name('forgot.password')->middleware('auth:sanctum');
     
     Route::post('attendance-report', [HomeController::class, 'generateReport'])->name('generate.reportPdf');
+
+    Route::post('generate-reportxlsx', [HomeController::class, 'generateReportExcel'])->name('generate.reportExcel');
     
 });
 
