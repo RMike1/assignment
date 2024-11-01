@@ -100,7 +100,6 @@ class HomeController extends Controller
 
     public function attendance()
     {
-
         if (Gate::allows('accessAttendance', User::class)) {
         $attendances = Attendance::all();
         return response()->json([
@@ -110,21 +109,19 @@ class HomeController extends Controller
         return response()->json([
             'message' => "U have not access to check attendance list"
         ], Response::HTTP_FORBIDDEN);
-
-
-
-        
     }
 
     public function generateReport(Request $request)
+    
     {
-        
-        $todayDate=Carbon::today();
-        $attendances = Attendance::whereDate('date',$todayDate )->get();
-        // $date = $request->query($todayDate, now()->toDateString()); 
-        // dd($attendances);
-
-        $pdf = PDF::loadView('report.attendance_report',compact('attendances','todayDate'));
-        return $pdf->inline();
+        if (Gate::allows('generateReportPdf', User::class)) {
+            $todayDate=Carbon::today();
+            $attendances = Attendance::whereDate('date',$todayDate )->get();
+            $pdf = PDF::loadView('report.attendance_report',compact('attendances','todayDate'));
+            return $pdf->inline();
+        }
+        return response()->json([
+            'message' => "U're not allowed to generate attendance report"
+        ], Response::HTTP_FORBIDDEN);
     }
 }

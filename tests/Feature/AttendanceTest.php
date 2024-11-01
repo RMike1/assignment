@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Models\Attendance;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\AdminAttendanceNotification;
 use App\Mail\AttendanceClockInNotification;
@@ -259,3 +260,6 @@ it('sends late clock-in notification if clock-in is after shift start', function
     Mail::assertQueued(AttendanceClockInNotification::class);
     Mail::assertQueued(AdminAttendanceNotification::class);
 });
+
+
+
