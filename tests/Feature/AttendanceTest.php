@@ -3,10 +3,12 @@
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Attendance;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\AdminAttendanceNotification;
 use App\Mail\AttendanceClockInNotification;
 use App\Mail\AttendanceClockOutNotification;
+use Illuminate\Http\Response;
 
 
 it('allows admin to add an employee', function () {
@@ -131,10 +133,7 @@ it('restrict non admin to view attendance data', function () {
     $response->assertJson(["message" => "U have not access to check attendance list"]);
 });
 
-it(' admin can generate pdf report', function () {
-    $response = $this->actingAs($this->admin, 'sanctum')->postJson(route('generate.reportPdf'));
-    $response->assertStatus(200);
-});
+
 
 it('allows authenticated user to clock in', function () {
     $this->actingAs($this->user, 'sanctum');
@@ -267,7 +266,7 @@ it('sends late clock-in notification if clock-in is after shift start', function
     Mail::assertQueued(AdminAttendanceNotification::class);
 });
 
-it('test_can_generate_attendance_excel_report', function () {
+it('can generate attendance excel report', function () {
     $this->actingAs($this->admin);
     Attendance::factory()->create(['date' => Carbon::today()]);
     $response = $this->post(route('generate.reportExcel'));
@@ -276,4 +275,26 @@ it('test_can_generate_attendance_excel_report', function () {
     $response->assertHeader('Content-Disposition', 'attachment; filename="attendance_report_' . now()->format('Y_m_d') . '.xlsx"');
 });
 
+
+it('admin can generate an PDF report', function () {
+    $this->actingAs($this->admin, 'sanctum');
+    Gate::shouldReceive('allows')
+        ->with('generateReport', User::class)
+        ->andReturn(true);
+    $response = $this->postJson(route('generate.reportPdf'));
+    $response->assertStatus(200);
+    $response->assertHeader('Content-Type', 'application/pdf');
+    $content = $response->getContent();
+    $this->assertNotEmpty($content, 'PDF content is empty.');
+});
+
+it('denies access to generate PDF report for non admins', function () {
+    $this->actingAs($this->user, 'sanctum');
+    Gate::shouldReceive('allows')
+        ->with('generateReport', User::class)
+        ->andReturn(false);
+    $response = $this->postJson(route('generate.reportPdf'));
+    $response->assertStatus(Response::HTTP_FORBIDDEN);
+    $response->assertJson(['message' => "U're not allowed to generate attendance report"]);
+});
 

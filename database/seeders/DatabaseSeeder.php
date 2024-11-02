@@ -16,16 +16,16 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call([
-            ShiftSeeder::class,
-        ]);
-        User::factory(5)->create();
-        // User::factory()->create([
-        //         'name' => 'Admin',
-        //         'email' => 'admin@gmail.com',
-        //         'userType' => 1,
+        //  $this->call([
+        //     ShiftSeeder::class,
         // ]);
-        Attendance::factory(3)->create();
+        //  User::factory(5)->create(); 
+        User::factory()->create([
+                'name' => 'Admin',
+                'email' => 'admin@gmail.com',
+                'userType' => 1,
+        ]);
+        // Attendance::factory(3)->create();
 
     }
 }
