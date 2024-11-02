@@ -154,32 +154,37 @@ class HomeController extends Controller
     public function generateReportExcel()
     {
         if (Gate::allows('generateReport', User::class)) {
-        $todayDate = Carbon::today();
-        $attendances = Attendance::whereDate('date', $todayDate)->get();
-        $spreadsheet = new Spreadsheet();
-        $activeWorksheet = $spreadsheet->getActiveSheet();
-        $activeWorksheet->setCellValue('A1', 'Employee Name');
-        $activeWorksheet->setCellValue('B1', 'Clock In Time');
-        $activeWorksheet->setCellValue('C1', 'Clock Out Time');
-        $activeWorksheet->setCellValue('D1', 'Status')->getDefaultColumnDimension()->setWidth(30);
-        $row = 2;
-        foreach ($attendances as $attendance) {
-            $activeWorksheet->setCellValue("A$row", $attendance->user->name);
-            $activeWorksheet->setCellValue("B$row", Carbon::parse($attendance->clock_in)->format('h:i A'));
-            $activeWorksheet->setCellValue("C$row", Carbon::parse($attendance->clock_out)->format('h:i A'));
-            $activeWorksheet->setCellValue("D$row", $attendance->user->shift->time_in < $attendance->clock_in ? 'Late' : 'On time');
-            $row++;
+            $todayDate = Carbon::today();
+            $attendances = Attendance::whereDate('date', $todayDate)->get();
+            if ($attendances->isEmpty()) {
+                return response()->json(['message' => 'No attendance records found for today.'], Response::HTTP_NO_CONTENT);
+            }
+            $spreadsheet = new Spreadsheet();
+            $activeWorksheet = $spreadsheet->getActiveSheet();
+            $activeWorksheet->setCellValue('A1', 'Employee Name');
+            $activeWorksheet->setCellValue('B1', 'Clock In Time');
+            $activeWorksheet->setCellValue('C1', 'Clock Out Time');
+            $activeWorksheet->setCellValue('D1', 'Status')->getDefaultColumnDimension()->setWidth(30);
+
+            $row = 2;
+            foreach ($attendances as $attendance) {
+                $activeWorksheet->setCellValue("A$row", $attendance->user->name);
+                $activeWorksheet->setCellValue("B$row", Carbon::parse($attendance->clock_in)->format('h:i A'));
+                $activeWorksheet->setCellValue("C$row", Carbon::parse($attendance->clock_out)->format('h:i A'));
+                $activeWorksheet->setCellValue("D$row", $attendance->user->shift->time_in < $attendance->clock_in ? 'Late' : 'On time');
+                $row++;
+            }
+            $fileName = "attendance_report_" . $todayDate->format('Y_m_d') . ".xlsx";
+            return response()->stream(function () use ($spreadsheet) {
+                $writer = new Xlsx($spreadsheet);
+                $writer->save('php://output');
+            }, 200, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+                'Cache-Control' => 'max-age=0',
+            ]);
         }
-        $fileName = "attendance_report_" . $todayDate->format('Y_m_d') . ".xlsx";
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment; filename="' . $fileName . '"');
-        header('Cache-Control: max-age=0');
-        $writer = new Xlsx($spreadsheet);
-        $writer->save('php://output');
-        exit();
-        }
-        return response()->json([
-            'message' => "U're not allowed to generate attendance report"
-        ], Response::HTTP_FORBIDDEN);
+
+        return response()->json(['message' => "U're not allowed to generate attendance report"], Response::HTTP_FORBIDDEN);
     }
 }

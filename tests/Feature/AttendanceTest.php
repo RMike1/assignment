@@ -1,5 +1,6 @@
 <?php
 
+use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Attendance;
 use Illuminate\Support\Facades\Mail;
@@ -256,8 +257,9 @@ it('sends email notifications to employee and admin upon clocking out', function
 
 it('sends late clock-in notification if clock-in is after shift start', function () {
     Mail::fake();
+    $this->user->shift()->update(['time_in' => now()->subMinutes(10)]);
     $this->actingAs($this->user, 'sanctum');
-    $this->user->shift()->update(['time_in' => now()->subHours(1)]);
+    Carbon::setTestNow(now()->addMinutes(15));
     $response = $this->postJson('/api/clock-in');
     $response->assertStatus(200);
     $response->assertJson(['message' => "U've successfully clocked in but You late!"]);
@@ -265,20 +267,13 @@ it('sends late clock-in notification if clock-in is after shift start', function
     Mail::assertQueued(AdminAttendanceNotification::class);
 });
 
-
-it('can generate an attendance Excel report', function () {
+it('test_can_generate_attendance_excel_report', function () {
     $this->actingAs($this->admin);
-    $attendance = Attendance::factory()->create([
-        'user_id' => $this->admin->id,
-        'date' => now(),
-        'clock_in' => now()->subHours(1),
-        'clock_out' => now(),
-    ]);
-    $response = $this->getJson(route('generate.reportExcel'));
+    Attendance::factory()->create(['date' => Carbon::today()]);
+    $response = $this->post(route('generate.reportExcel'));
     $response->assertStatus(200);
     $response->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     $response->assertHeader('Content-Disposition', 'attachment; filename="attendance_report_' . now()->format('Y_m_d') . '.xlsx"');
-    $this->assertStringStartsWith('<?xml version="1.0"', (string) $response->getContent());
 });
 
 
