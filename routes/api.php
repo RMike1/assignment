@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\UploadController;
 use App\Http\Controllers\Auth\AuthController;
 
 
@@ -37,6 +38,8 @@ Route::middleware(['auth:sanctum'])->group(function(){
 });
 
 
+
+// Route::post('upload-profile-image-on-google', [UploadController::class, 'uploadOnGoogle'])->name('upload.profile.google');
 
 Route::post('reset-password', [NewPasswordController::class, 'reset'])->name('reset.password');
 
