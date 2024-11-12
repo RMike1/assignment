@@ -11,6 +11,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
         "phpoffice/phpspreadsheet": "^3.3",
+        "spatie/flysystem-dropbox": "^3.0",
         "wemersonjanuario/wkhtmltopdf-windows": "0.12.2.3"
     },
     "require-dev": {
