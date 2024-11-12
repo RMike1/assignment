@@ -192,10 +192,14 @@ class AuthController extends Controller
 
                 $file_id = json_decode($response->body())->id;
 
+                $fileName = $this->getFileNameFromDrive($file_id, $accessToken);
+
+
                 $validated['profile_image'] = $file_id;
                 $user->update($validated);
                 return response()->json([
                     'user' => $user,
+                    'employee_profile_image'=>$fileName
                 ]);
             } else {
                 return response('Failed to upload: ' . $response->body(), 500);
