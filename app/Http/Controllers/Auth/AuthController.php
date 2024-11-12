@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Auth;
 
 use App\Models\User;
 use PharIo\Manifest\Email;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Sanctum\Contracts\HasApiTokens;
 use Illuminate\Routing\Controllers\Middleware;
@@ -17,6 +19,24 @@ use Illuminate\Auth\Access\AuthorizationException;
 
 class AuthController extends Controller
 {
+
+
+    private function token()
+    {
+       $client_id = config('services.google.client_id');
+       $client_secret = config('services.google.client_secret');
+       $refresh_token = config('services.google.refresh_token');
+
+       $response = Http::post('https://oauth2.googleapis.com/token', [
+           'client_id' => $client_id,
+           'client_secret' => $client_secret,
+           'refresh_token' => $refresh_token,
+           'grant_type' => 'refresh_token'
+       ]);
+
+       $accessTokenData = json_decode($response->getBody(), true);
+       return $accessTokenData['access_token'] ?? null;
+    }
 
     public function all_employess(Request $request)
     {
@@ -54,6 +74,7 @@ class AuthController extends Controller
     {
         return ['user' => $user];
     }
+
     public function add_employee(Request $request)
     {
         Gate::authorize('addEmployee', User::class);
@@ -61,13 +82,47 @@ class AuthController extends Controller
             'name' => 'required|max:255',
             'email' => 'required|email|unique:users',
             'password' => 'required|confirmed',
+            'profile_image' => 'file|required',
         ]);
-        $user = User::create($validated);
 
-        return response()->json([
-            'user' => $user,
-        ]);
+        $accessToken = $this->token();
+        // dd($accessToken);
+
+        $file = $request->file('profile_image');
+        $folderId = config('services.google.folder_id');
+
+        $filePath=$file->getPathname();
+        
+        $metadata = [
+            'name' => $file->getClientOriginalName(),
+            'parents' => [$folderId],
+        ];
+        
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $accessToken,
+        ])->attach(
+            'metadata', json_encode($metadata), 'metadata.json'
+        )->attach(
+            'file', fopen($filePath, 'r'), $file->getClientOriginalName()
+        )->post('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart');
+
+        if ($response->successful()) {
+
+            $file_id = json_decode($response->body())->id;
+
+            $validated['profile_image']=$file_id;
+            // $validated['profile_image']='ImageID';
+
+            $user = User::create($validated);
+
+            return response()->json([
+                'user' => $user,
+            ]);
+        } else {
+            return response('Failed to upload: ' . $response->body(), 500);
+        }
     }
+
 
     public function update_employee(Request $request, $userId)
     {

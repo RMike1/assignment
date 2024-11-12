@@ -28,6 +28,7 @@ class UserFactory extends Factory
             'userType' => fake()->boolean(),
             'email' => fake()->unique()->safeEmail(),
             'shift_id' =>1,
+            'profile_image' =>fake()->imageUrl(),
             'password' => static::$password ??= Hash::make('1234'),
             'remember_token' => Str::random(10),
         ];

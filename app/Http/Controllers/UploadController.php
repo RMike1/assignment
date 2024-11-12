@@ -10,10 +10,10 @@ class UploadController extends Controller
 {
     private function token()
     {
-        $client_id = \config('services.google.client_id');
-        $client_secret = \config('services.google.client_secret');
-        $refresh_token = \config('services.google.refresh_token');
-        $folder_id = \config('services.google.folder_id');
+        $client_id = config('services.google.client_id');
+        $client_secret = config('services.google.client_secret');
+        $refresh_token = config('services.google.refresh_token');
+
         $response = Http::post('https://oauth2.googleapis.com/token', [
             'client_id' => $client_id,
             'client_secret' => $client_secret,
@@ -21,37 +21,48 @@ class UploadController extends Controller
             'grant_type' => 'refresh_token'
         ]);
 
-        $accesstoken = json_decode((string)$response->getBody(), true)['access_token'];
-        return $accesstoken;
+        $accessTokenData = json_decode($response->getBody(), true);
+        return $accessTokenData['access_token'] ?? null;
     }
 
     public function uploadOnGoogle(Request $request)
     {
-
-        $validated = $request->validate([
-            'file' => 'required',
+        $request->validate([
+            'file' => 'required|file',
         ]);
 
-        $folder_id = \config('services.google.folder_id');
+        $accessToken = $this->token();
+        if (!$accessToken) {
+            return response('Failed to retrieve access token', 500);
+        }
 
-        $accesstoken = $this->token();
-        // dd($accesstoken);
+        $file = $request->file('file');
+        $folderId = config('services.google.folder_id');
 
-        $name = Str::slug($request->file->getClientOriginalName());
-        $file_type = $request->file->getClientMimeType();
+        $filePath=$file->getPathname();
+        
+        $metadata = [
+            'name' => $file->getClientOriginalName(),
+            'parents' => [$folderId],
+        ];
 
+        
         $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' .$accesstoken,
-            'Content-Type' => 'Application/json'
-        ])->post('https://www.googleapis.com/drive/v3/files', [
-            'data' => $name,
-            'mimeType' => $file_type,
-            'uploadType' => 'resumable',
-            'parents'=>[$folder_id]
-        ]);
+            'Authorization' => 'Bearer ' . $accessToken,
+        ])->attach(
+            'metadata', json_encode($metadata), 'metadata.json'
+        )->attach(
+            'file', fopen($filePath, 'r'), $file->getClientOriginalName()
+        )->post('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart');
+
+
+
 
         if ($response->successful()) {
-            return response('uploaded successful!!');
+
+            $file_id = json_decode($response->body())->id;
+
+            return response('Upload successful!');
         } else {
             return response('Failed to upload: ' . $response->body(), 500);
         }
