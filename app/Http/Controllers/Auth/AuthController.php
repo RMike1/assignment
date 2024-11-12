@@ -23,19 +23,19 @@ class AuthController extends Controller
 
     private function token()
     {
-       $client_id = config('services.google.client_id');
-       $client_secret = config('services.google.client_secret');
-       $refresh_token = config('services.google.refresh_token');
+        $client_id = config('services.google.client_id');
+        $client_secret = config('services.google.client_secret');
+        $refresh_token = config('services.google.refresh_token');
 
-       $response = Http::post('https://oauth2.googleapis.com/token', [
-           'client_id' => $client_id,
-           'client_secret' => $client_secret,
-           'refresh_token' => $refresh_token,
-           'grant_type' => 'refresh_token'
-       ]);
+        $response = Http::post('https://oauth2.googleapis.com/token', [
+            'client_id' => $client_id,
+            'client_secret' => $client_secret,
+            'refresh_token' => $refresh_token,
+            'grant_type' => 'refresh_token'
+        ]);
 
-       $accessTokenData = json_decode($response->getBody(), true);
-       return $accessTokenData['access_token'] ?? null;
+        $accessTokenData = json_decode($response->getBody(), true);
+        return $accessTokenData['access_token'] ?? null;
     }
 
     public function all_employess(Request $request)
@@ -75,6 +75,21 @@ class AuthController extends Controller
         return ['user' => $user];
     }
 
+
+    private function getFileNameFromDrive($fileId, $accessToken)
+    {
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $accessToken,
+        ])->get('https://www.googleapis.com/drive/v3/files/' . $fileId . '?fields=name');
+
+        if ($response->successful()) {
+            $fileMetadata = json_decode($response->body(), true);
+            return $fileMetadata['name'] ?? null;
+        }
+
+        return null; // Return null if the request fails
+    }
+
     public function add_employee(Request $request)
     {
         Gate::authorize('addEmployee', User::class);
@@ -91,32 +106,39 @@ class AuthController extends Controller
         $file = $request->file('profile_image');
         $folderId = config('services.google.folder_id');
 
-        $filePath=$file->getPathname();
-        
+        $filePath = $file->getPathname();
+
         $metadata = [
             'name' => $file->getClientOriginalName(),
             'parents' => [$folderId],
         ];
-        
+
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $accessToken,
         ])->attach(
-            'metadata', json_encode($metadata), 'metadata.json'
+            'metadata',
+            json_encode($metadata),
+            'metadata.json'
         )->attach(
-            'file', fopen($filePath, 'r'), $file->getClientOriginalName()
+            'file',
+            fopen($filePath, 'r'),
+            $file->getClientOriginalName()
         )->post('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart');
 
         if ($response->successful()) {
 
             $file_id = json_decode($response->body())->id;
 
-            $validated['profile_image']=$file_id;
+            $fileName = $this->getFileNameFromDrive($file_id, $accessToken);
+
+            $validated['profile_image'] = $file_id;
             // $validated['profile_image']='ImageID';
 
             $user = User::create($validated);
 
             return response()->json([
                 'user' => $user,
+                'employee_profile_image'=>$fileName
             ]);
         } else {
             return response('Failed to upload: ' . $response->body(), 500);
@@ -138,11 +160,46 @@ class AuthController extends Controller
                 'email' => 'required|email|unique:users,email,' . $user->id,
                 'password' => 'required',
                 'name' => 'required',
+                'profile_image' => 'file|required',
             ]);
-            $user->update($validated);
-            return response()->json([
-                'user' => $user,
-            ]);
+
+
+            $accessToken = $this->token();
+
+            $file = $request->file('profile_image');
+            $folderId = config('services.google.folder_id');
+
+            $filePath = $file->getPathname();
+
+            $metadata = [
+                'name' => $file->getClientOriginalName(),
+                'parents' => [$folderId],
+            ];
+
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $accessToken,
+            ])->attach(
+                'metadata',
+                json_encode($metadata),
+                'metadata.json'
+            )->attach(
+                'file',
+                fopen($filePath, 'r'),
+                $file->getClientOriginalName()
+            )->post('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart');
+
+            if ($response->successful()) {
+
+                $file_id = json_decode($response->body())->id;
+
+                $validated['profile_image'] = $file_id;
+                $user->update($validated);
+                return response()->json([
+                    'user' => $user,
+                ]);
+            } else {
+                return response('Failed to upload: ' . $response->body(), 500);
+            }
         }
         return response()->json([
             'message' => "You're not allowed to update an employee."
