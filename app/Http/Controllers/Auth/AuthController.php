@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Sanctum\Contracts\HasApiTokens;
 use Illuminate\Routing\Controllers\Middleware;
@@ -74,8 +75,6 @@ class AuthController extends Controller
     {
         return ['user' => $user];
     }
-
-
     private function getFileNameFromDrive($fileId, $accessToken)
     {
         $response = Http::withHeaders([
@@ -87,7 +86,7 @@ class AuthController extends Controller
             return $fileMetadata['name'] ?? null;
         }
 
-        return null; // Return null if the request fails
+        return null;
     }
 
     public function add_employee(Request $request)
@@ -98,14 +97,44 @@ class AuthController extends Controller
             'email' => 'required|email|unique:users',
             'password' => 'required|confirmed',
             'profile_image' => 'file|required',
+            'upload_type' => 'required|in:google,dropbox',
         ]);
-
-        $accessToken = $this->token();
-        // dd($accessToken);
-
+    
+        $storageService = $validated['upload_type'];
         $file = $request->file('profile_image');
+    
+        if ($storageService === 'google') {
+            $response = $this->uploadToGoogleDrive($file);
+        } elseif ($storageService === 'dropbox') {
+            $fileName = $file->getClientOriginalName();
+            $filePath = 'profile_images/' . $fileName;
+    
+            $stored = Storage::disk('dropbox')->putFileAs('profile_images', $file, $fileName);
+    
+            if ($stored) {
+                $response = ['success' => true, 'file_id' => $filePath, 'file_name' => $fileName];
+            } else {
+                $response = ['success' => false, 'error' => 'Failed to upload to Dropbox'];
+            }
+        }
+    
+        if ($response['success']) {
+            $validated['profile_image'] = $response['file_id'];
+            $user = User::create($validated);
+    
+            return response()->json([
+                'user' => $user,
+                'employee_profile_image' => $response['file_name'],
+            ]);
+        } else {
+            return response('Failed to upload: ' . $response['error'], 500);
+        }
+    }
+    
+    private function uploadToGoogleDrive($file)
+    {
+        $accessToken = $this->token();
         $folderId = config('services.google.folder_id');
-
         $filePath = $file->getPathname();
 
         $metadata = [
@@ -126,24 +155,94 @@ class AuthController extends Controller
         )->post('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart');
 
         if ($response->successful()) {
-
             $file_id = json_decode($response->body())->id;
-
             $fileName = $this->getFileNameFromDrive($file_id, $accessToken);
 
-            $validated['profile_image'] = $file_id;
-            // $validated['profile_image']='ImageID';
+            if (!$fileName) {
+                return ['success' => false, 'error' => 'Failed to fetch file name from Google Drive'];
+            }
 
-            $user = User::create($validated);
-
-            return response()->json([
-                'user' => $user,
-                'employee_profile_image'=>$fileName
-            ]);
+            return ['success' => true, 'file_name' => $fileName, 'file_id' => $file_id];
         } else {
-            return response('Failed to upload: ' . $response->body(), 500);
+            return ['success' => false, 'error' => $response->body()];
         }
     }
+
+
+//     private function uploadToDropbox($file)
+// {
+//     // Store the file using the 'dropbox' disk defined in filesystems.php
+//     $fileName = $file->getClientOriginalName();
+//     $path = Storage::disk('dropbox')->putFileAs('/profile_images', $file, $fileName);
+
+//     if ($path) {
+//         return ['success' => true, 'file_name' => $fileName, 'path' => $path];
+//     }
+
+//     return ['success' => false, 'error' => 'Failed to upload to Dropbox'];
+// }
+
+    // Dropbox upload method
+    // private function uploadToDropbox($file)
+    // {
+    //     $accessToken = config('services.dropbox.access_token');
+    //     $filePath = $file->getPathname();
+    //     $fileName = $file->getClientOriginalName();
+
+    //     // Prepare the file for upload to Dropbox
+    //     $fileContents = fopen($filePath, 'r');
+    //     $uploadUrl = 'https://content.dropboxapi.com/2/files/upload';
+
+    //     $headers = [
+    //         'Authorization' => 'Bearer ' . $accessToken,
+    //         'Dropbox-API-Arg' => json_encode([
+    //             'path' => '/profile_images/' . $fileName,
+    //             'mode' => 'add',
+    //             'autorename' => true,
+    //             'mute' => false,
+    //         ]),
+    //         'Content-Type' => 'application/octet-stream',
+    //     ];
+
+    //     $response = Http::withHeaders($headers)
+    //         ->attach('file', $fileContents, $fileName)
+    //         ->post($uploadUrl);
+
+    //     if ($response->successful()) {
+    //         // Return Dropbox file path or URL if needed
+    //         return ['success' => true, 'file_name' => $fileName];  // You can return a URL or the file name
+    //     } else {
+    //         return ['success' => false, 'error' => $response->body()];
+    //     }
+    // }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     public function update_employee(Request $request, $userId)
@@ -199,7 +298,7 @@ class AuthController extends Controller
                 $user->update($validated);
                 return response()->json([
                     'user' => $user,
-                    'employee_profile_image'=>$fileName
+                    'employee_profile_image' => $fileName
                 ]);
             } else {
                 return response('Failed to upload: ' . $response->body(), 500);
