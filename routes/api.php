@@ -37,10 +37,6 @@ Route::middleware(['auth:sanctum'])->group(function(){
     
 });
 
-
-
-// Route::post('upload-profile-image-on-google', [UploadController::class, 'uploadOnGoogle'])->name('upload.profile.google');
-
 Route::post('reset-password', [NewPasswordController::class, 'reset'])->name('reset.password');
 
 

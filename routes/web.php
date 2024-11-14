@@ -9,9 +9,6 @@ use App\Http\Controllers\UploadController;
 
  // Route::get('generate-reportxlsx', [HomeController::class, 'generateReportExcel'])->name('generate.reportExcel');
 
+ // Route::post('upload-profile-image-on-google', [UploadController::class, 'uploadOnGoogle'])->name('upload.profile.google');
 
-Route::post('upload-profile-image-on-google', [UploadController::class, 'uploadOnGoogle'])->name('upload.profile.google');
-
-// Route::post('upload-profile-on-google', [UploadController::class, 'uploadOnGoogle'])->name('upload.profile.google');
-
-Route::get('upload-profile-on-google', [UploadController::class, 'getUploadOnGoogle'])->name('upload.google');
+ // Route::get('upload-profile-on-google', [UploadController::class, 'getUploadOnGoogle'])->name('upload.google');
