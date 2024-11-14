@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('password');
             $table->boolean('userType')->default(0);
-            $table->foreignIdFor(Shift::class)->default(1)->constrained()->cascadeOnDelete()->cascadeOnUpdate();
+            $table->foreignIdFor(Shift::class)->nullable()->constrained()->cascadeOnDelete();
             $table->rememberToken();
             $table->timestamps();
         });

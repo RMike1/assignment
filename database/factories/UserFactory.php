@@ -2,9 +2,10 @@
 
 namespace Database\Factories;
 
-use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\Hash;
+use App\Models\Shift;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
@@ -27,7 +28,7 @@ class UserFactory extends Factory
             'name' => fake()->name(),
             'userType' => fake()->boolean(),
             'email' => fake()->unique()->safeEmail(),
-            'shift_id' =>1,
+            'shift_id' => Shift::inRandomOrder()->first()->id ?? 1,
             'profile_image' =>fake()->imageUrl(),
             'password' => static::$password ??= Hash::make('1234'),
             'remember_token' => Str::random(10),

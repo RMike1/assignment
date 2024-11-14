@@ -9,23 +9,55 @@ use App\Mail\AdminAttendanceNotification;
 use App\Mail\AttendanceClockInNotification;
 use App\Mail\AttendanceClockOutNotification;
 use Illuminate\Http\Response;
+use Illuminate\Http\UploadedFile;
+use App\Services\GoogleDriveService;
+use App\Services\DropboxService;
 
 
-it('allows admin to add an employee', function () {
+it('allows admin to add an employee with Google drive to store profile image', function () {
     $this->actingAs($this->admin, 'sanctum');
+
     $employeeData = [
-        'name' => 'user2',
-        'email' => 'user2@gmail.com',
+        'name' => 'user7',
+        'email' => 'user7@gmail.com',
         'password' => 1234,
         'password_confirmation' => 1234,
         'shift_id' => $this->morningShift->id,
+        'profile_image' => $this->google_drive_file,
+        'upload_type' => 'google',
     ];
 
     $response = $this->postJson('/api/add-employee', $employeeData);
 
-    $response->assertStatus(200);
-    $this->assertDatabaseHas('users', ['email' => 'user2@gmail.com']);
+     $response->assertStatus(200)
+             ->assertJsonPath('user.name', 'user7')
+             ->assertJsonPath('employee_profile_image', 'employee-name-profile-image.jpg');
+    $this->assertDatabaseHas('users', ['email' => 'user7@gmail.com']);
 });
+
+
+it('allows admin to add an employee with DropBox to store profile image', function () {
+    
+    $this->actingAs($this->admin, 'sanctum');
+    $employeeData = [
+        'name' => 'user3',
+        'email' => 'user3@gmail.com',
+        'password' => 1234,
+        'password_confirmation' => 1234,
+        'shift_id' => $this->afternoonShift->id,
+        'profile_image' => $this->dropbox_file,
+        'upload_type' => 'dropbox',
+    ];
+
+    $response = $this->postJson('/api/add-employee', $employeeData);
+
+    $response->assertStatus(200)
+             ->assertJsonPath('user.name', 'user3')
+             ->assertJsonPath('employee_profile_image', 'employee-name-profile-image.jpg');
+    $this->assertDatabaseHas('users', ['email' => 'user3@gmail.com']);
+
+});
+
 
 
 it('restrict non-admin to add an employee', function () {
@@ -36,32 +68,110 @@ it('restrict non-admin to add an employee', function () {
         'password' => 1234,
         'password_confirmation' => 1234,
         'shift_id' => $this->morningShift->id,
+        'profile_image' => UploadedFile::fake()->image('user23.jpg'),
+        'upload_type' => 'google',
     ];
     $response = $this->postJson('/api/add-employee', $employeeData);
     $response->assertStatus(403);
 });
 
-it('allows admin to update an employee', function () {
+it('fails if upload type is missing', function () {
+
+    $this->actingAs($this->admin, 'sanctum');
+    $response = $this->postJson('/api/add-employee', [
+        'name' => 'user7',
+        'email' => 'user7@gmail.com',
+        'password' => 1234,
+        'password_confirmation' => 1234,
+        'shift_id' => $this->morningShift->id,
+        'profile_image' => UploadedFile::fake()->image('user.jpg'),
+    ]);
+    $response->assertStatus(422); 
+});
+
+it('fails if name or email already exists', function () {
+    
+    
+    $this->actingAs($this->admin, 'sanctum');
+
+    User::factory()->create([
+        'name' => 'user12',
+        'email' => 'user12@gmail.com',
+        'password' => 1234,
+        'shift_id' => $this->morningShift->id,
+        'profile_image' => $this->google_drive_file,
+    ]);
+
+    $response = $this->postJson('/api/add-employee', [
+        'name' => 'user12',
+        'email' => 'user12@gmail.com',
+        'password' => 1234,
+        'password_confirmation' => 1234,
+        'shift_id' => $this->morningShift->id,
+        'profile_image' => UploadedFile::fake()->image('user12.jpg'),
+        'upload_type' => 'google',
+    ]);
+    $response->assertStatus(422); 
+});
+
+
+it('allows admin to update an employee with an profile image via GoogleDrive on store', function () {
 
     $userB = User::factory()->create([
         'name' => 'user4',
         'email' => 'user4@gmail.com',
         'password' => 1234,
         'shift_id' => $this->morningShift->id,
+        'profile_image' => $this->google_drive_file,
     ]);
 
     $this->actingAs($this->admin, 'sanctum');
     $employeeData = [
-        'name' => 'user2',
-        'email' => 'user2@gmail.com',
+        'name' => 'user7',
+        'email' => 'user7@gmail.com',
         'password' => 1234,
+        'password_confirmation' => 1234,
         'shift_id' => $this->morningShift->id,
+        'profile_image' => $this->google_drive_file,
+        'upload_type' => 'google',
     ];
 
     $response = $this->putJson("/api/update-employee/{$userB->id}", $employeeData);
 
-    $response->assertStatus(200);
-    $this->assertDatabaseHas('users', ['email' => 'user2@gmail.com']);
+    $response->assertStatus(200)
+        ->assertJsonPath('user.name', 'user7')
+        ->assertJsonPath('employee_profile_image', 'employee-name-profile-image.jpg');
+    $this->assertDatabaseHas('users', ['email' => 'user7@gmail.com']);
+});
+
+
+it('allows admin to update an employee with an profile image via Dropbox on store', function () {
+
+    $userB = User::factory()->create([
+        'name' => 'user4',
+        'email' => 'user4@gmail.com',
+        'password' => 1234,
+        'shift_id' => $this->morningShift->id,
+        'profile_image' => $this->google_drive_file,
+    ]);
+
+    $this->actingAs($this->admin, 'sanctum');
+    $employeeData = [
+        'name' => 'user3',
+        'email' => 'user3@gmail.com',
+        'password' => 1234,
+        'password_confirmation' => 1234,
+        'shift_id' => $this->morningShift->id,
+        'profile_image' => $this->dropbox_file,
+        'upload_type' => 'dropbox',
+    ];
+
+    $response = $this->putJson("/api/update-employee/{$userB->id}", $employeeData);
+
+    $response->assertStatus(200)
+             ->assertJsonPath('user.name', 'user3')
+             ->assertJsonPath('employee_profile_image', 'employee-name-profile-image.jpg');
+    $this->assertDatabaseHas('users', ['email' => 'user3@gmail.com']);
 });
 
 it('restrict non admin to update employee', function () {
@@ -71,6 +181,7 @@ it('restrict non admin to update employee', function () {
         'email' => 'user4@gmail.com',
         'password' => 1234,
         'shift_id' => $this->morningShift->id,
+        'profile_image' => UploadedFile::fake()->image('user23.jpg'),
     ]);
 
     $this->actingAs($this->user, 'sanctum');
@@ -79,6 +190,8 @@ it('restrict non admin to update employee', function () {
         'email' => 'user2@gmail.com',
         'password' => 1234,
         'shift_id' => $this->morningShift->id,
+        'profile_image' => UploadedFile::fake()->image('user23.jpg'),
+        'upload_type' => 'google',
     ];
 
     $response = $this->putJson("/api/update-employee/{$userB->id}", $employeeData);
@@ -94,6 +207,7 @@ it('allows admin to delete an employee', function () {
         'email' => 'user5@gmail.com',
         'password' => 1234,
         'shift_id' => $this->morningShift->id,
+        'profile_image' => UploadedFile::fake()->image('user23.jpg'),
     ]);
 
     $this->actingAs($this->admin, 'sanctum');
@@ -112,6 +226,7 @@ it('restrict normal user to delete an employee', function () {
         'email' => 'user5@gmail.com',
         'password' => 1234,
         'shift_id' => $this->morningShift->id,
+        'profile_image' => UploadedFile::fake()->image('user23.jpg'),
     ]);
 
     $this->actingAs($this->user, 'sanctum');
@@ -297,4 +412,9 @@ it('denies access to generate PDF report for non admins', function () {
     $response->assertStatus(Response::HTTP_FORBIDDEN);
     $response->assertJson(['message' => "U're not allowed to generate attendance report"]);
 });
+
+
+
+
+
 

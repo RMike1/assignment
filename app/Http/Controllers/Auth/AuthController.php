@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Models\User;
+use App\Models\Shift;
 use PharIo\Manifest\Email;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
@@ -67,6 +68,7 @@ class AuthController extends Controller
             'name' => 'required|max:255|unique:users',
             'email' => 'required|email|unique:users',
             'password' => 'required|confirmed',
+            'shift_id' => 'required',
             'profile_image' => 'file|required',
             'upload_type' => 'required|in:google,dropbox',
         ]);
@@ -107,17 +109,17 @@ class AuthController extends Controller
         if (Gate::allows('updateEmployee', $user)) {
             $validated = $request->validate([
                 'email' => 'required|email|unique:users,email,' . $user->id,
-                'name' => 'required|name|unique:users,name,' . $user->id,
+                'name' => 'required',
                 'password' => 'required',
                 'profile_image' => 'file|required',
                 'upload_type' => 'required|in:google,dropbox',
             ]);
- 
 
             $storageService = $validated['upload_type'];
-
             $file = $request->file('profile_image');
+    
             $userName=$validated['name'];
+
     
             if ($storageService === 'google') {
                 $response = app(GoogleDriveService::class)->upload($file,$userName);

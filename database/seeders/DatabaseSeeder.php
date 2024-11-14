@@ -16,10 +16,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        //  $this->call([
-        //     ShiftSeeder::class,
-        // ]);
-        //  User::factory(5)->create(); 
+         $this->call([
+            ShiftSeeder::class,
+        ]);
+        // Shift::factory()->create();
         User::factory()->create([
                 'name' => 'Admin',
                 'email' => 'admin@gmail.com',
