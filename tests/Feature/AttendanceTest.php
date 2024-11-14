@@ -3,15 +3,19 @@
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Attendance;
+use Illuminate\Http\Response;
+use App\Services\DropboxService;
+use Illuminate\Http\UploadedFile;
+use App\Mail\AttendanceReportMail;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use App\Mail\AdminAttendanceNotification;
 use App\Mail\AttendanceClockInNotification;
 use App\Mail\AttendanceClockOutNotification;
-use Illuminate\Http\Response;
-use Illuminate\Http\UploadedFile;
-use App\Services\GoogleDriveService;
-use App\Services\DropboxService;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 
 it('allows admin to add an employee with Google drive to store profile image', function () {
@@ -29,15 +33,15 @@ it('allows admin to add an employee with Google drive to store profile image', f
 
     $response = $this->postJson('/api/add-employee', $employeeData);
 
-     $response->assertStatus(200)
-             ->assertJsonPath('user.name', 'user7')
-             ->assertJsonPath('employee_profile_image', 'employee-name-profile-image.jpg');
+    $response->assertStatus(200)
+        ->assertJsonPath('user.name', 'user7')
+        ->assertJsonPath('employee_profile_image', 'employee-name-profile-image.jpg');
     $this->assertDatabaseHas('users', ['email' => 'user7@gmail.com']);
 });
 
 
 it('allows admin to add an employee with DropBox to store profile image', function () {
-    
+
     $this->actingAs($this->admin, 'sanctum');
     $employeeData = [
         'name' => 'user3',
@@ -52,10 +56,9 @@ it('allows admin to add an employee with DropBox to store profile image', functi
     $response = $this->postJson('/api/add-employee', $employeeData);
 
     $response->assertStatus(200)
-             ->assertJsonPath('user.name', 'user3')
-             ->assertJsonPath('employee_profile_image', 'employee-name-profile-image.jpg');
+        ->assertJsonPath('user.name', 'user3')
+        ->assertJsonPath('employee_profile_image', 'employee-name-profile-image.jpg');
     $this->assertDatabaseHas('users', ['email' => 'user3@gmail.com']);
-
 });
 
 
@@ -86,12 +89,12 @@ it('fails if upload type is missing', function () {
         'shift_id' => $this->morningShift->id,
         'profile_image' => UploadedFile::fake()->image('user.jpg'),
     ]);
-    $response->assertStatus(422); 
+    $response->assertStatus(422);
 });
 
 it('fails if name or email already exists', function () {
-    
-    
+
+
     $this->actingAs($this->admin, 'sanctum');
 
     User::factory()->create([
@@ -111,7 +114,7 @@ it('fails if name or email already exists', function () {
         'profile_image' => UploadedFile::fake()->image('user12.jpg'),
         'upload_type' => 'google',
     ]);
-    $response->assertStatus(422); 
+    $response->assertStatus(422);
 });
 
 
@@ -169,8 +172,8 @@ it('allows admin to update an employee with an profile image via Dropbox on stor
     $response = $this->putJson("/api/update-employee/{$userB->id}", $employeeData);
 
     $response->assertStatus(200)
-             ->assertJsonPath('user.name', 'user3')
-             ->assertJsonPath('employee_profile_image', 'employee-name-profile-image.jpg');
+        ->assertJsonPath('user.name', 'user3')
+        ->assertJsonPath('employee_profile_image', 'employee-name-profile-image.jpg');
     $this->assertDatabaseHas('users', ['email' => 'user3@gmail.com']);
 });
 
@@ -414,7 +417,44 @@ it('denies access to generate PDF report for non admins', function () {
 });
 
 
+it('generate daily attendance report PDF n Excel via email at the end of day', function () {
+    $attendances = Attendance::factory()->count(5)->create(); 
+    $todayDate = now()->toDateString();
+    $pdf = PDF::loadView('email.daily-report', compact('attendances', 'todayDate'));
+    $pdfContent = $pdf->output(); 
+    expect($pdfContent)->not()->toBeEmpty();
+    $fileNamePdf = 'attendance_report_' . $todayDate . '.pdf';
+    $pdfFilePath = 'reports/' . $fileNamePdf;
+    Storage::disk('public')->put($pdfFilePath, $pdfContent);
+    expect(Storage::disk('public')->exists($pdfFilePath))->toBeTrue();
+    $spreadsheet = new Spreadsheet();
+    $sheet = $spreadsheet->getActiveSheet();
+    $sheet->setCellValue('A1', 'Employee');
+    $sheet->setCellValue('B1', 'Attendance Date');
+    $sheet->setCellValue('C1', 'Status');
+    $row = 2;
+    foreach ($attendances as $attendance) {
+        $sheet->setCellValue('A' . $row, $attendance->user->name);
+        $sheet->setCellValue('B' . $row, $attendance->attendance_date);
+        $sheet->setCellValue('C' . $row, $attendance->status);
+        $row++;
+    }
 
-
-
-
+    $writer = new Xlsx($spreadsheet);
+    ob_start();
+    $writer->save('php://output');
+    $excelContent = ob_get_clean();
+    expect($excelContent)->not()->toBeEmpty();
+    $fileNameExcel = 'attendance_report_' . $todayDate . '.xlsx';
+    $excelFilePath = 'reports/' . $fileNameExcel;
+    Storage::disk('public')->put($excelFilePath, $excelContent);
+    expect(Storage::disk('public')->exists($excelFilePath))->toBeTrue();
+    $fileUrlPdf = url('storage/' . $pdfFilePath);
+    $fileUrlExcel = url('storage/' . $excelFilePath);
+    Mail::fake();
+    Mail::to($this->admin->email)->send(new AttendanceReportMail($fileUrlPdf, $todayDate, $fileUrlExcel));
+    Mail::assertSent(AttendanceReportMail::class, function ($mail) use ($fileUrlPdf, $fileUrlExcel) {
+        return $mail->fileUrlPdf === $fileUrlPdf && $mail->fileUrlExcel === $fileUrlExcel;
+    });
+    Storage::disk('public')->delete([$pdfFilePath, $excelFilePath]);
+});

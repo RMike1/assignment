@@ -3,7 +3,6 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -14,17 +13,15 @@ class AttendanceReportMail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public $fileUrlPdf;
+    public $pdfTodayReport;
+    public $fileUrlExcel;
 
-    public $filePath;
-    public $todayReport;
-    public $excelFilePath;
-
-    public function __construct($fileUrlPdf,$pdfTodayReport,$fileUrlExcel)
+    public function __construct($fileUrlPdf, $pdfTodayReport, $fileUrlExcel)
     {
-        $this->filePath = $fileUrlPdf;
-        $this->todayReport = $pdfTodayReport;
-        $this->excelFilePath = $fileUrlExcel;
-        // $this->excelFileName = $excelFileName;
+        $this->fileUrlPdf = $fileUrlPdf;
+        $this->pdfTodayReport = $pdfTodayReport;
+        $this->fileUrlExcel = $fileUrlExcel;
     }
 
     /**
@@ -46,18 +43,15 @@ class AttendanceReportMail extends Mailable
         return new Content(
             view: 'email.daily-report',
             with: [
-                'todayReport'=>$this->todayReport,
-                'filepath' =>$this->filePath,
-                'excelFilePath' => $this->excelFilePath,
-                // 'excelFilePath' => url('reports/' . $this->excelFilePath),
+                'pdfTodayReport' => $this->pdfTodayReport,
+                'fileUrlPdf' => $this->fileUrlPdf,
+                'fileUrlExcel' => $this->fileUrlExcel,
             ],
         );
     }
 
     /**
      * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
      */
     public function attachments(): array
     {

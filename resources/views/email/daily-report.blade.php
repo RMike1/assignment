@@ -44,11 +44,11 @@
     </div>
 
     <div class="content">
-        <h3>Attendance report of {{$todayReport}}</h3>
-        <p>Hello Here is daily attendance report of today click </p>
-        <p><span><u><a href="{{url($filepath)}}"  target="_blank">here pdf</a></u></span></p>
-        <p><span><u><a href="{{url($excelFilePath)}}" target="_blank">here excel</a></u></span></p>
-        <p>Thank you</p>
+        <h3>Attendance report of {{ $pdfTodayReport ?? 'No report available' }}</h3>
+    <p>Hello, here is the daily attendance report for today. Click the links below to view:</p>
+    <p><span><u><a href="{{ $fileUrlPdf ?? '#' }}" target="_blank">View PDF</a></u></span></p>
+    <p><span><u><a href="{{ $fileUrlExcel ?? '#' }}" target="_blank">View Excel</a></u></span></p>
+    <p>Thank you</p>
     </div>
 </div>
 
