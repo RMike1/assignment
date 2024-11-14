@@ -417,7 +417,7 @@ it('denies access to generate PDF report for non admins', function () {
 });
 
 
-it('generate daily attendance report PDF n Excel via email at the end of day', function () {
+it('generate daily attendance report PDF n Excel via email at the end of day to admin', function () {
     $attendances = Attendance::factory()->count(5)->create(); 
     $todayDate = now()->toDateString();
     $pdf = PDF::loadView('email.daily-report', compact('attendances', 'todayDate'));
